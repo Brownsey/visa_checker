@@ -1,0 +1,13 @@
+services:
+  visa-checker:
+    build: .
+    image: visa-checker:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config/config.yaml:/app/config/config.yaml:ro
+      - visa_checker_data:/app/data
+    command: run
+
+volumes:
+  visa_checker_data:

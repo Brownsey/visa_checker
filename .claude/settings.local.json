@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(gh auth *)",
+      "Bash(gh repo *)",
+      "Bash(gh label *)",
+      "Bash(gh milestone *)",
+      "Bash(gh api *)",
+      "Bash(python -c \"import sys,json; ms=json.load\\(sys.stdin\\); [print\\(m['number'], m['title']\\) for m in ms]\")",
+      "Bash(gh issue *)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}

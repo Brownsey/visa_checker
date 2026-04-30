@@ -1,0 +1,7 @@
+# Local development overrides — headed browser, verbose logs
+services:
+  visa-checker:
+    environment:
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./visa_checker:/app/visa_checker  # live code reload

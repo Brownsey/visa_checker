@@ -1,0 +1,82 @@
+# Visa Checker Configuration Example
+# Copy to config.yaml and fill in your values.
+# All ${ENV_VAR} references are resolved from environment variables.
+
+targets:
+  - country: France
+    provider: tlscontact         # vfs_global | tlscontact | bls | capago
+    centre: London
+    visa_type: short_stay
+    earliest_date: "2026-06-01"
+    latest_date: "2026-09-30"
+
+  - country: Germany
+    provider: vfs_global
+    centre: London
+    visa_type: short_stay
+    earliest_date: "2026-06-01"
+    latest_date: "2026-09-30"
+
+credentials:
+  tlscontact:
+    email: ${TLS_EMAIL}
+    password: ${TLS_PASSWORD}
+  vfs_global:
+    email: ${VFS_EMAIL}
+    password: ${VFS_PASSWORD}
+  bls:
+    email: ${BLS_EMAIL}
+    password: ${BLS_PASSWORD}
+  capago:
+    email: ${CAPAGO_EMAIL}
+    password: ${CAPAGO_PASSWORD}
+
+polling:
+  interval_seconds: 90
+  jitter_pct: 0.20   # +/-20% random jitter on each interval
+  max_retries: 5
+
+alerts:
+  telegram:
+    enabled: true
+    bot_token: ${TELEGRAM_BOT_TOKEN}
+    chat_id: ${TELEGRAM_CHAT_ID}
+  email:
+    enabled: false
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username: ${EMAIL_USER}
+    password: ${EMAIL_PASS}
+    to: ${EMAIL_TO}
+  ntfy:
+    enabled: true
+    server: https://ntfy.sh
+    topic: ${NTFY_TOPIC}
+  sms:
+    enabled: false
+    twilio_sid: ${TWILIO_SID}
+    twilio_token: ${TWILIO_TOKEN}
+    from_number: ${TWILIO_FROM}
+    to_number: ${TWILIO_TO}
+
+proxies:
+  enabled: false     # set to true to route traffic through proxies.txt
+  provider: file     # brightdata | file
+  endpoint: ${PROXY_ENDPOINT}
+  file: proxies.txt  # path to proxy list — any of these formats (one per line):
+                     #   host:port
+                     #   host:port:username:password
+                     #   http://username:password@host:port
+                     # Selection: random. Failed proxies are skipped automatically.
+                     # Pool resets to full list once all proxies are exhausted.
+
+captcha:
+  provider: none     # 2captcha | anticaptcha | none
+  api_key: ${CAPTCHA_API_KEY}
+
+state:
+  db_path: data/state.db
+
+logging:
+  level: INFO
+  file: data/visa_checker.log
