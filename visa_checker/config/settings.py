@@ -102,11 +102,34 @@ class SMSConfig(BaseModel):
     to_number: str = ""
 
 
+class DiscordConfig(BaseModel):
+    enabled: bool = False
+    webhook_url: str = ""
+    username: str = "Visa Checker"
+    avatar_url: str = ""
+
+
+class WxPusherConfig(BaseModel):
+    enabled: bool = False
+    app_token: str = ""
+    uid: str = ""
+    topic_id: str = ""
+
+
+class WeChatWorkConfig(BaseModel):
+    enabled: bool = False
+    webhook_url: str = ""
+    mention_mobiles: list[str] = []
+
+
 class AlertsConfig(BaseModel):
     telegram: TelegramConfig = TelegramConfig()
     email: EmailConfig = EmailConfig()
     ntfy: NtfyConfig = NtfyConfig()
     sms: SMSConfig = SMSConfig()
+    discord: DiscordConfig = DiscordConfig()
+    wxpusher: WxPusherConfig = WxPusherConfig()
+    wechat_work: WeChatWorkConfig = WeChatWorkConfig()
 
 
 class ProxiesConfig(BaseModel):
@@ -117,8 +140,20 @@ class ProxiesConfig(BaseModel):
 
 
 class CaptchaConfig(BaseModel):
-    provider: Literal["2captcha", "anticaptcha", "none"] = "none"
+    provider: Literal[
+        "audio_recaptcha",          # free — reCAPTCHA v2 audio challenge via speech-to-text
+        "hcaptcha_accessibility",   # free — hCaptcha accessibility cookie bypass
+        "manual",                   # free — pause and send Telegram alert for human solving
+        "2captcha",                 # paid ~$2/1000
+        "anticaptcha",              # paid
+        "none",                     # raises immediately on any CAPTCHA
+    ] = "audio_recaptcha"
     api_key: str = ""
+    # For hcaptcha_accessibility: register at https://www.hcaptcha.com/accessibility
+    hcaptcha_accessibility_token: str = ""
+    # For manual: Telegram credentials to send the screenshot to
+    manual_telegram_bot_token: str = ""
+    manual_telegram_chat_id: str = ""
 
 
 class StateConfig(BaseModel):

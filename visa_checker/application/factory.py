@@ -1,10 +1,13 @@
 """Wires together all adapters from a Settings object (composition root)."""
 from __future__ import annotations
 
+from visa_checker.adapters.alerts.discord import DiscordChannel
 from visa_checker.adapters.alerts.email_channel import EmailChannel
 from visa_checker.adapters.alerts.ntfy import NtfyChannel
 from visa_checker.adapters.alerts.sms import SMSChannel
 from visa_checker.adapters.alerts.telegram import TelegramChannel
+from visa_checker.adapters.alerts.wechat_work import WeChatWorkChannel
+from visa_checker.adapters.alerts.wxpusher import WxPusherChannel
 from visa_checker.adapters.anti_detection.captcha import build_captcha_solver
 from visa_checker.adapters.anti_detection.fingerprint import FingerprintRotator
 from visa_checker.adapters.anti_detection.proxy import build_proxy_provider
@@ -44,6 +47,12 @@ def build_alert_channels(settings: Settings) -> list[IAlertChannel]:
                 a.sms.to_number,
             )
         )
+    if a.discord.enabled:
+        channels.append(DiscordChannel(a.discord.webhook_url, a.discord.username, a.discord.avatar_url))
+    if a.wxpusher.enabled:
+        channels.append(WxPusherChannel(a.wxpusher.app_token, a.wxpusher.uid, a.wxpusher.topic_id))
+    if a.wechat_work.enabled:
+        channels.append(WeChatWorkChannel(a.wechat_work.webhook_url, a.wechat_work.mention_mobiles))
     return channels
 
 

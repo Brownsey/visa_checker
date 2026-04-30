@@ -59,6 +59,27 @@ alerts:
     from_number: ${TWILIO_FROM}
     to_number: ${TWILIO_TO}
 
+  discord:
+    enabled: false
+    webhook_url: ${DISCORD_WEBHOOK_URL}
+    username: "Visa Checker"   # display name shown in Discord
+    # avatar_url: https://example.com/avatar.png  # optional
+
+  wxpusher:
+    # Personal WeChat push — free, no business account needed
+    # Setup: https://wxpusher.zjiecode.com → create app → scan QR in WeChat → get UID
+    enabled: false
+    app_token: ${WXPUSHER_APP_TOKEN}
+    uid: ${WXPUSHER_UID}
+    # topic_id: ${WXPUSHER_TOPIC_ID}  # alternative: broadcast to all topic subscribers
+
+  wechat_work:
+    # WeChat Work (WeCom) group bot webhook
+    # Setup: WeCom group → right-click → Add Group Robot → Create → copy URL
+    enabled: false
+    webhook_url: ${WECOM_WEBHOOK_URL}
+    # mention_mobiles: ["+447700900000"]  # optional: @mention someone in the group
+
 proxies:
   enabled: true      # all traffic is routed through proxies.txt (set false to disable)
   provider: file     # brightdata | file
@@ -71,8 +92,19 @@ proxies:
                      # Pool resets to full list once all proxies are exhausted.
 
 captcha:
-  provider: none     # 2captcha | anticaptcha | none
-  api_key: ${CAPTCHA_API_KEY}
+  # Free options (no API key required):
+  #   audio_recaptcha        — reCAPTCHA v2 (VFS Global) via Google speech-to-text
+  #                            requires: uv add playwright-recaptcha  +  ffmpeg
+  #   hcaptcha_accessibility — hCaptcha (TLScontact) via official accessibility cookie
+  #                            get token free at: https://www.hcaptcha.com/accessibility
+  #   manual                 — pauses + sends Telegram screenshot, waits for you to solve
+  # Paid: 2captcha / anticaptcha
+  provider: audio_recaptcha
+
+  api_key: ${CAPTCHA_API_KEY}                          # only for 2captcha/anticaptcha
+  hcaptcha_accessibility_token: ${HCAPTCHA_ACCESSIBILITY_TOKEN}  # only for hcaptcha_accessibility
+  manual_telegram_bot_token: ${TELEGRAM_BOT_TOKEN}     # reuses your existing bot
+  manual_telegram_chat_id: ${TELEGRAM_CHAT_ID}
 
 state:
   db_path: data/state.db
