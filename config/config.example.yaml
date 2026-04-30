@@ -60,7 +60,7 @@ alerts:
     to_number: ${TWILIO_TO}
 
 proxies:
-  enabled: false     # set to true to route traffic through proxies.txt
+  enabled: true      # all traffic is routed through proxies.txt (set false to disable)
   provider: file     # brightdata | file
   endpoint: ${PROXY_ENDPOINT}
   file: proxies.txt  # path to proxy list — any of these formats (one per line):
