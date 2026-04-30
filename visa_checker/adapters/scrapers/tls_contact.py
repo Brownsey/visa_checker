@@ -81,6 +81,12 @@ class TLSContactScraper(BaseScraper):
     async def login(self) -> None:
         page = await self._get_page()
         await random_mouse_movement(page, cfg=self._behaviour)
+
+        # Pre-inject hCaptcha accessibility cookie BEFORE loading the login page
+        # so hCaptcha's JS sees it on first initialisation (no reload needed)
+        if self._captcha_solver and hasattr(self._captcha_solver, "pre_navigate"):
+            await self._captcha_solver.pre_navigate(page)
+
         login_url = self._base_url() + "/login"
         logger.info("[tlscontact] Navigating to login: {}", login_url)
         await page.goto(login_url, wait_until="networkidle", timeout=30000)
@@ -92,8 +98,10 @@ class TLSContactScraper(BaseScraper):
         await human_type(page, "input[type=email], input[name=email]", self._email, cfg=self._behaviour)
         await human_type(page, "input[type=password], input[name=password]", self._password, cfg=self._behaviour)
 
-        has_captcha = await page.query_selector("[data-hcaptcha-sitekey], .h-captcha")
-        if has_captcha and self._captcha_solver:
+        # Solve CAPTCHA unconditionally — solver returns "" if none is present.
+        # HCaptchaAccessibilitySolver injects its cookie before navigation via pre_navigate();
+        # by the time we reach here the challenge should already be bypassed.
+        if self._captcha_solver:
             await self._captcha_solver.solve(page)
 
         await human_click(page, "button[type=submit], input[type=submit]", cfg=self._behaviour)

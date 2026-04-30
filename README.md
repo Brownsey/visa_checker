@@ -23,9 +23,9 @@ visa_checker/
 │
 ├── adapters/            ← Concrete implementations of ports
 │   ├── scrapers/        ← vfs_global, tls_contact, bls_international, capago
-│   ├── alerts/          ← telegram, ntfy, email_channel, sms
+│   ├── alerts/          ← telegram, ntfy, discord, wxpusher, wechat_work, email, sms
 │   ├── browser/         ← engine (Playwright+stealth), human helpers, sessions
-│   ├── anti_detection/  ← proxy (file-based), captcha (2captcha), fingerprint
+│   ├── anti_detection/  ← proxy, captcha (audio/accessibility/manual/2captcha/anticaptcha), fingerprint
 │   └── state/           ← sqlite_repository
 │
 ├── application/         ← Application services (orchestration)
@@ -63,9 +63,13 @@ StateRepository.mark_seen(slot)
     │
     ▼
 AlertDispatcher.dispatch(slot)
-    ├─ TelegramChannel.send(slot)
-    ├─ NtfyChannel.send(slot)
-    └─ EmailChannel.send(slot)  (if enabled)
+    ├─ TelegramChannel.send(slot)     (if enabled)
+    ├─ NtfyChannel.send(slot)         (if enabled)
+    ├─ DiscordChannel.send(slot)      (if enabled)
+    ├─ WxPusherChannel.send(slot)     (if enabled)
+    ├─ WeChatWorkChannel.send(slot)   (if enabled)
+    ├─ EmailChannel.send(slot)        (if enabled)
+    └─ SMSChannel.send(slot)          (if enabled)
 ```
 
 ---
@@ -171,12 +175,15 @@ asyncio.run(provider.validate_all())
 
 | Channel | Cost | Setup |
 |---------|------|-------|
-| **Telegram** | Free | Create bot via @BotFather, get `bot_token` + `chat_id` |
-| **ntfy.sh** | Free | Install [ntfy app](https://ntfy.sh), pick a unique topic |
+| **Telegram** | Free | Create bot via [@BotFather](https://t.me/BotFather), get `bot_token` + `chat_id` |
+| **ntfy.sh** | Free | Install [ntfy app](https://ntfy.sh), pick a unique topic name |
+| **Discord** | Free | Server Settings → Integrations → Webhooks → New Webhook → Copy URL |
+| **WeChat (WxPusher)** | Free | [wxpusher.zjiecode.com](https://wxpusher.zjiecode.com) — scan QR in WeChat |
+| **WeChat Work (WeCom)** | Free | WeCom group → right-click → Add Group Robot → copy webhook URL |
 | **Email** | Free (Gmail) | Enable 2FA, create an [App Password](https://myaccount.google.com/apppasswords) |
 | **SMS** | ~£0.05/msg | Sign up at [twilio.com](https://www.twilio.com), get SID + token |
 
-Test all channels at any time:
+Enable any channel in `config.yaml` under `alerts:` and add credentials to `.env`. Test at any time:
 
 ```bash
 uv run visa-checker test-alerts
@@ -186,13 +193,77 @@ uv run visa-checker test-alerts
 
 ## CAPTCHA solving
 
-VFS Global uses reCAPTCHA v2 on login; TLScontact uses hCaptcha. Without a solver, the scraper will raise `CaptchaError` when a CAPTCHA is encountered.
+CAPTCHAs only appear on the **login page**, and only if your session has expired (every ~4 hours). With warm sessions and a residential proxy, CAPTCHAs often don't appear at all.
 
-To enable automated solving:
+### Which CAPTCHA each provider uses
 
-1. Sign up at [2captcha.com](https://2captcha.com) (~$2 per 1000 solves)
-2. Add your API key: `CAPTCHA_API_KEY=your_key` in `.env`
-3. Set `captcha.provider: 2captcha` in `config.yaml`
+| Provider | CAPTCHA type | Recommended solver |
+|----------|-------------|-------------------|
+| VFS Global | reCAPTCHA v2 | `audio_recaptcha` (free default) |
+| TLScontact | hCaptcha | `hcaptcha_accessibility` (free) |
+| BLS International | None / reCAPTCHA v2 | `audio_recaptcha` |
+| Capago | None / reCAPTCHA v2 | `audio_recaptcha` |
+
+### Solver options
+
+Set `captcha.provider` in `config.yaml`:
+
+#### `audio_recaptcha` — Free, default, no sign-up
+
+Solves reCAPTCHA v2 automatically by clicking the audio challenge and transcribing it using Google's free Speech Recognition API.
+
+**One-time setup (required):**
+```bash
+uv add playwright-recaptcha
+# Windows:
+winget install ffmpeg
+# Linux/VPS:
+apt install ffmpeg
+```
+
+Works for VFS Global. Will raise a clear error if it encounters hCaptcha (TLScontact) — use `hcaptcha_accessibility` for that.
+
+#### `hcaptcha_accessibility` — Free, ~2 minutes setup
+
+hCaptcha's own accessibility programme provides a cookie token that bypasses the challenge entirely. Valid for ~1 year.
+
+1. Visit [hcaptcha.com/accessibility](https://www.hcaptcha.com/accessibility)
+2. Enter your email and click the link they send
+3. Your browser sets an `hc_accessibility` cookie — copy its value
+4. Add to `.env`: `HCAPTCHA_ACCESSIBILITY_TOKEN=your_token_here`
+5. Set in `config.yaml`: `captcha.provider: hcaptcha_accessibility`
+
+This solver automatically falls back to `audio_recaptcha` for any reCAPTCHA it encounters, so it covers both TLScontact (hCaptcha) and VFS Global (reCAPTCHA) in one config option.
+
+#### `manual` — Free, requires you to be at your computer
+
+The scraper pauses, sends a screenshot to your Telegram, and waits up to 5 minutes for you to solve the CAPTCHA in the browser window. Once solved, it continues automatically.
+
+Requires a **headed browser** (set `headless: false` in your deployment config).
+
+#### `2captcha` / `anticaptcha` — Paid, ~$2/1000 solves
+
+Human workers solve the CAPTCHA within ~30 seconds. Handles both reCAPTCHA v2 and hCaptcha. Good if you can't use the free options.
+
+```
+CAPTCHA_API_KEY=your_key_here
+```
+```yaml
+captcha:
+  provider: 2captcha  # or anticaptcha
+  api_key: ${CAPTCHA_API_KEY}
+```
+
+### Recommended configuration
+
+```yaml
+# Covers both VFS Global (reCAPTCHA) and TLScontact (hCaptcha):
+captcha:
+  provider: hcaptcha_accessibility
+  hcaptcha_accessibility_token: ${HCAPTCHA_ACCESSIBILITY_TOKEN}
+```
+
+This is the best single option because `hcaptcha_accessibility` automatically falls back to `audio_recaptcha` for reCAPTCHA pages.
 
 ---
 

@@ -94,9 +94,8 @@ class VFSGlobalScraper(BaseScraper):
         await human_type(page, "input[type=email]", self._email, cfg=self._behaviour)
         await human_type(page, "input[type=password]", self._password, cfg=self._behaviour)
 
-        # Solve CAPTCHA if present
-        has_captcha = await page.query_selector("[data-sitekey]")
-        if has_captcha and self._captcha_solver:
+        # Solve CAPTCHA unconditionally — solver returns "" if none is present
+        if self._captcha_solver:
             await self._captcha_solver.solve(page)
 
         await human_click(page, "button[type=submit]", cfg=self._behaviour)
