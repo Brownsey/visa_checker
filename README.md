@@ -349,9 +349,9 @@ uv run ruff format .   # format
 
 Each provider uses a different mechanism:
 
-- **VFS Global** — logs in, navigates to the booking calendar, parses `[data-date]` elements not marked as disabled
+- **VFS Global** — logs in (with GDPR cookie dismissal and Angular Material `#mat-input-0`/`#mat-input-1` selectors), clicks **Start New Booking**, then drives a 3-step dropdown wizard (visa centre → visa category → visa sub-category) before reading available dates from `div.alert` text content. Login success is confirmed by waiting for the **Start New Booking** button rather than URL-checking alone.
 - **TLScontact** — intercepts the AJAX calendar response (`page.on("response", ...)`) for efficient slot parsing, with DOM fallback
-- **BLS International** — navigates to the appointment page for the selected centre, parses available date elements
-- **Capago** — navigates to the country-specific appointment page, parses available date slots
+- **BLS International** — logs in, navigates to the appointment page for the selected centre, parses available date elements
+- **Capago** — logs in, navigates to the country-specific appointment page, parses available date slots
 
 Slot dates are normalised into `SlotResult` objects with a stable `slot_id` for deduplication. The SQLite state store ensures you only get alerted once per slot per day.
