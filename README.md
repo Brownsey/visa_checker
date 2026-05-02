@@ -278,6 +278,39 @@ This is the best single option because `hcaptcha_accessibility` automatically fa
 
 ---
 
+## Account ban risk
+
+### TL;DR
+
+Permanent account bans from using this tool are very unlikely. The real risk is temporary IP blocks, which proxy rotation already handles.
+
+### Per-provider breakdown
+
+| Provider | ToS clause on automation | Practical enforcement | Account ban risk |
+|----------|--------------------------|----------------------|-----------------|
+| **VFS Global** | "misuse or abuse" (no explicit bot clause) | Cloudflare IP block (~2 hr cooldown) | Very low |
+| **TLScontact** | "unauthorized access" + "interfere with other users" | Bot-detection landing page (technical, not account action) | Low |
+| **BLS International** | None found | Cloudflare IP block | Very low |
+| **Capago** | None found | Cloudflare IP block | Very low |
+
+### Why IP blocks aren't account bans
+
+VFS Global's "Sorry, you are blocked" error and TLScontact's bot-detection page both operate at the **IP/session level**, not the account level. Switching IP (proxy rotation) or waiting ~2 hours resolves them. Across hundreds of public forum discussions there are zero documented cases of a visa applicant's account being permanently terminated for using an automated checker.
+
+### The real risk: suspicious login flagging
+
+The most likely account disruption is standard **security flagging** — if your credentials are used from an unfamiliar proxy IP, the provider may require email/SMS re-verification or temporarily lock the account. This is mitigated by:
+
+- **Session persistence** (`browser/session_store.py`) — the bot reuses authenticated cookies, so it only logs in once per session rather than on every poll
+- **Proxy consistency** — using the same proxy for a session rather than rotating mid-session
+- **Human-like behaviour** — jittered intervals and mouse movement simulation reduce bot signals
+
+### Polling rate and ToS exposure
+
+TLScontact's ToS prohibits "interfering with the enjoyment of the service by other users." Polling every ~90 seconds (the default) across a handful of accounts is negligible load. Reducing `polling.interval_seconds` below 60 increases both detection risk and ToS exposure.
+
+---
+
 ## Deployment (24/7 on a VPS)
 
 The recommended deployment is a cheap Linux VPS (e.g. Hetzner CX11, ~€3.50/month):
