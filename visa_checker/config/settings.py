@@ -38,6 +38,7 @@ class TargetConfig(BaseModel):
     provider: ProviderName
     centre: str
     visa_type: str = "short_stay"
+    visa_sub_category: str = ""
     earliest_date: date
     latest_date: date
 
